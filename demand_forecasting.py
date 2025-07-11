@@ -30,23 +30,19 @@ def create_features(df):
 train = create_features(train)
 test = create_features(test)
 
-# Encode categorical variables (store, item)
 for col in ['store', 'item']:
     le = LabelEncoder()
     le.fit(list(train[col].astype(str)) + list(test[col].astype(str)))
     train[col] = le.transform(train[col].astype(str))
     test[col] = le.transform(test[col].astype(str))
 
-# 3. Prepare data for modeling
 features = ['store', 'item', 'year', 'month', 'day', 'dayofweek', 'weekofyear']
 X = train[features]
 y = train['sales'] if 'sales' in train.columns else train.iloc[:, -1]  # fallback if column name is different
 X_test = test[features]
 
-# 4. Train/Validation split for local validation
 X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# 5. Model Training
 if xgb_available:
     model = XGBRegressor(n_estimators=200, max_depth=8, learning_rate=0.1, subsample=0.8, random_state=42, n_jobs=-1)
 else:
@@ -54,20 +50,16 @@ else:
 
 model.fit(X_train, y_train)
 
-# 6. Validation (optional, for hackathon insight)
 y_pred_val = model.predict(X_val)
 rmse = np.sqrt(mean_squared_error(y_val, y_pred_val))
 print(f'Validation RMSE: {rmse:.4f}')
 
-# 7. Predict on test set
 test_preds = model.predict(X_test)
 
-# 8. Prepare submission
 submission = pd.DataFrame({'id': test['id'], 'sales': np.round(test_preds).astype(int)})
 submission.to_csv('submission.csv', index=False)
 print('submission.csv file created!')
 
-# 9. (Optional) Targeted Offers Logic
 def flag_targeted_offers(test_df, preds, stock_df=None, demand_threshold=20, stock_threshold=100):
     """
     Flags items for targeted offers based on low predicted demand and high stock.
@@ -83,6 +75,7 @@ def flag_targeted_offers(test_df, preds, stock_df=None, demand_threshold=20, sto
         flagged['flag_offer'] = flagged['predicted_sales'] < demand_threshold
     return flagged[flagged['flag_offer']]
 
+'''for data frames and further working'''
 # Example usage (uncomment if you have stock_df):
 # stock_df = pd.read_csv('stock.csv')
 # offers = flag_targeted_offers(test, test_preds, stock_df)
